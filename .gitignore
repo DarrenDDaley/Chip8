@@ -2,3 +2,8 @@
 **/*.rs.bk
 
 \.idea/
+
+/*.dll
+gnu-mingw/
+
+msvc/
