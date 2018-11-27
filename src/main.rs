@@ -1,3 +1,5 @@
+extern crate sdl2;
+
 mod display;
 mod memory;
 
@@ -15,6 +17,7 @@ pub fn main() {
         process::exit(1);
     });
 
-    let display = display::Display::new();
-    display.initialize();
+    let sdl_context = sdl2::init().unwrap();
+
+    let display = display::Display::new(&sdl_context);
 }
