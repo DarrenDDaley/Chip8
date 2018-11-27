@@ -3,6 +3,9 @@ mod memory;
 
 use std::process;
 
+const CHIP8_WIDTH: usize = 64;
+const CHIP8_HEIGHT: usize = 32;
+
 pub fn main() {
 
     let mut memory = memory::RAM::new();
@@ -12,9 +15,6 @@ pub fn main() {
         process::exit(1);
     });
 
-    let display = display::Display::new("Chip 8 Emulator".to_string(),
-                                                800,
-                                                600,
-                                                1);
+    let display = display::Display::new();
     display.initialize();
 }

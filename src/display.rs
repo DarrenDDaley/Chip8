@@ -1,19 +1,20 @@
 extern crate sdl2;
 
+use CHIP8_WIDTH;
+use CHIP8_HEIGHT;
+
+const SCREEN_SCALE: u32 = 5;
+const SCREEN_WIDTH: u32 = (CHIP8_WIDTH as u32) * SCREEN_SCALE;
+const SCREEN_HEIGHT: u32 = (CHIP8_HEIGHT as u32) * SCREEN_SCALE;
+
+const PROGRAM_TITLE: &str = "Chip 8 Emulator";
+
 pub struct Display {
-    screen_name: String,
-    screen_width: u32,
-    screen_height: u32,
-    scale: u32,
 }
 
 impl Display {
-    pub fn new(screen_name: String, screen_width: u32, screen_height: u32, scale: u32) -> Display {
+    pub fn new() -> Display {
         Display {
-            screen_name,
-            screen_width,
-            screen_height,
-            scale,
         }
     }
 
@@ -22,8 +23,8 @@ impl Display {
         let video_subsystem = sdl_context.video().unwrap();
 
         let window = video_subsystem.window(&self.screen_name,
-                                            self.screen_width * self.scale,
-                                            self.screen_height * self.scale)
+                                            SCREEN_WIDTH * self.scale,
+                                            SCREEN_HEIGHT * self.scale)
             .position_centered()
             .build()
             .unwrap();
