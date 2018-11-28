@@ -2,6 +2,7 @@ extern crate sdl2;
 
 mod display;
 mod memory;
+mod cpu;
 
 use std::process;
 
@@ -19,8 +20,4 @@ pub fn main() {
 
     let sdl_context = sdl2::init().unwrap();
     let mut display = display::Display::new(&sdl_context);
-
-    loop {
-        display.draw(&memory.video_ram);
-    }
 }

@@ -1,3 +1,6 @@
+use CHIP8_WIDTH;
+use CHIP8_HEIGHT;
+
 pub struct CPU {
     registers : [u8; 16],
     register_i : u16,
@@ -7,6 +10,7 @@ pub struct CPU {
     delay_timer: u8,
     sound_timer: u8,
     memory : [u8; 4096],
+    video_ram: [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT]
 }
 
 impl CPU {
@@ -20,6 +24,7 @@ impl CPU {
             delay_timer: 0,
             sound_timer: 0,
             memory,
+            video_ram: [[0; CHIP8_WIDTH]; CHIP8_HEIGHT]
         };
     }
 

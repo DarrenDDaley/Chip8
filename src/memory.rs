@@ -1,6 +1,3 @@
-use CHIP8_WIDTH;
-use CHIP8_HEIGHT;
-
 use std::env;
 use std::fs::File;
 use std::error::Error;
@@ -8,14 +5,12 @@ use std::io::prelude::*;
 
 pub struct RAM {
     pub memory : [u8; 4096],
-    pub video_ram: [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT]
 }
 
 impl RAM {
     pub fn new() -> RAM {
         let mut ram = RAM {
             memory: [0; 4096],
-            video_ram: [[0; CHIP8_WIDTH]; CHIP8_HEIGHT]
         };
 
         for i in 0x0..0x50  {
