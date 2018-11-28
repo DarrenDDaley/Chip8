@@ -4,6 +4,9 @@ mod display;
 mod memory;
 mod cpu;
 
+#[cfg(test)]
+mod cpu_tests;
+
 use std::process;
 
 const CHIP8_WIDTH: usize = 64;

@@ -4,8 +4,6 @@ use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
-use std::ops;
-
 use CHIP8_WIDTH;
 use CHIP8_HEIGHT;
 
@@ -46,7 +44,10 @@ impl Display {
 
                 let x = (x as u32) * SCREEN_SCALE;
                 let y = (y as u32) * SCREEN_SCALE;
-                self.canvas.fill_rect(Rect::new(x as i32, y as i32, SCREEN_SCALE, SCREEN_SCALE));
+                self.canvas.fill_rect(Rect::new(x as i32,
+                                                     y as i32,
+                                                SCREEN_SCALE,
+                                                SCREEN_SCALE));
             }
         }
         self.canvas.present();
