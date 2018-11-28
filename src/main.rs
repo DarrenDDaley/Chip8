@@ -18,6 +18,9 @@ pub fn main() {
     });
 
     let sdl_context = sdl2::init().unwrap();
+    let mut display = display::Display::new(&sdl_context);
 
-    let display = display::Display::new(&sdl_context);
+    loop {
+        display.draw(&memory.video_ram);
+    }
 }
