@@ -46,8 +46,8 @@ impl CPU {
         cpu
     }
 
-    pub fn opcode_execute(&mut self, opcode: u16) {
-        let pc_change = match opcode {
+    pub fn opcode_execute(&mut self) {
+        let pc_change = match self.opcode_fetch() {
             0x00E0 => self.opcode_clear_screen(),
             0x00EE => self.opcode_return_subroutine(),
 
@@ -61,7 +61,7 @@ impl CPU {
         }
     }
 
-    pub fn opcode_fetch(&mut self) -> u16 {
+    fn opcode_fetch(&mut self) -> u16 {
         return (self.memory[self.program_counter] as u16) << 8 |
                (self.memory[self.program_counter + 1] as u16);
     }
@@ -83,3 +83,6 @@ impl CPU {
     }
 }
 
+#[cfg(test)]
+#[path = "./cpu_tests.rs"]
+mod cpu_tests;
