@@ -47,9 +47,33 @@ impl CPU {
     }
 
     pub fn opcode_execute(&mut self) {
-        let pc_change = match self.opcode_fetch() {
-            0x00E0 => self.opcode_clear_screen(),
-            0x00EE => self.opcode_return_subroutine(),
+
+        let opcode = self.opcode_fetch();
+
+        let nibbles = (
+            (opcode & 0xF000) >> 12 as u8,
+            (opcode & 0x0F00) >> 8 as u8,
+            (opcode & 0x00F0) >> 4 as u8,
+            (opcode & 0x000F) as u8,
+        );
+
+        let nnn = (opcode & 0x0FFF) as usize;
+        let kk = (opcode & 0x00FF) as u8;
+        let x = nibbles.1 as usize;
+        let y = nibbles.2 as usize;
+        let n = nibbles.3 as usize;
+
+
+        let pc_change = match nibbles {
+            (0x00, 0x00, 0x0e, 0x00) => self.opcode_clear_screen(),
+            (0x00, 0x00, 0x0e, 0x0e) => self.opcode_return_subroutine(),
+            (0x01, _, _, _) => self.opcode_jump_nnn(nnn),
+            (0x02, _, _, _) => self.opcode_call_subroutine_nnn(nnn),
+            (0x03, _, _, _) => self.opcode_skip_equal_vxkk(x, kk),
+            (0x04, _, _, _) => self.opcode_skip_not_equal_vxkk(x, kk),
+            (0x05, _, _, 0x00) => self.opcode_skip_equal_vxvy(x, y),
+            (0x06, _, _, _) => self.opcode_set_vxkk(x, kk),
+            (0x07, _, _, _) => self.opcode_add_vxkk(x, kk),
 
             _ => ProgramCounter::Next
         };
@@ -80,6 +104,38 @@ impl CPU {
 
         self.stack_pointer -= 1;
         ProgramCounter::Jump(self.stack[pointer])
+    }
+
+    fn opcode_jump_nnn(&self, nnn: usize) -> ProgramCounter {
+        ProgramCounter::Jump(nnn)
+    }
+
+    fn opcode_call_subroutine_nnn(&mut self, nnn: usize) -> ProgramCounter {
+        self.stack_pointer += 1;
+        self.stack[self.stack_pointer] = self.program_counter;
+        ProgramCounter::Jump(nnn)
+    }
+
+    fn opcode_skip_equal_vxkk(&self, x: usize, kk: u8) -> ProgramCounter {
+        ProgramCounter::skip_if(self.registers[x] == kk)
+    }
+
+    fn opcode_skip_not_equal_vxkk(&self, x: usize, kk: u8) -> ProgramCounter {
+        ProgramCounter::skip_if(self.registers[x] != kk)
+    }
+
+    fn opcode_skip_equal_vxvy(&self, x: usize, y: usize) -> ProgramCounter {
+        ProgramCounter::skip_if(self.registers[x] == self.registers[y])
+    }
+
+    fn opcode_set_vxkk(&mut self, x: usize, kk: u8) -> ProgramCounter {
+        self.registers[x] = kk;
+        ProgramCounter::Next
+    }
+
+    fn opcode_add_vxkk(&mut self, x: usize, kk: u8) -> ProgramCounter {
+        self.registers[x] = self.registers[x] + kk;
+        ProgramCounter::Next
     }
 }
 
