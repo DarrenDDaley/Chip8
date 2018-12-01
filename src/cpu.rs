@@ -74,6 +74,12 @@ impl CPU {
             (0x05, _, _, 0x00) => self.opcode_skip_equal_vxvy(x, y),
             (0x06, _, _, _) => self.opcode_set_vxkk(x, kk),
             (0x07, _, _, _) => self.opcode_add_vxkk(x, kk),
+            (0x08, _, _, 0x00) => self.opcode_set_vxvy(x, y),
+            (0x08, _, _, 0x01) => self.opcode_or_vxvy(x, y),
+            (0x08, _, _, 0x02) => self.opcode_and_vxvy(x, y),
+            (0x08, _, _, 0x03) => self.opcode_xor_vxvy(x, y),
+            (0x08, _, _, 0x04) => self.opcode_addcarry_vxvy(x, y),
+            (0x08, _, _, 0x05) => self.opcode_subtract_vxvy(x, y),
 
             _ => ProgramCounter::Next
         };
@@ -135,6 +141,41 @@ impl CPU {
 
     fn opcode_add_vxkk(&mut self, x: usize, kk: u8) -> ProgramCounter {
         self.registers[x] = self.registers[x] + kk;
+        ProgramCounter::Next
+    }
+
+    fn opcode_set_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+        self.registers[x] = self.registers[y];
+        ProgramCounter::Next
+    }
+
+    fn opcode_or_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+        self.registers[x] |= self.registers[y];
+        ProgramCounter::Next
+    }
+
+    fn opcode_and_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+        self.registers[x] &= self.registers[y];
+        ProgramCounter::Next
+    }
+
+    fn opcode_xor_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+        self.registers[x] ^= self.registers[y];
+        ProgramCounter::Next
+    }
+
+    fn opcode_addcarry_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+        let result = (self.registers[x] as u16) + (self.registers[y] as u16);
+        self.registers[x] = result as u8;
+
+        self.registers[0x0f] = if result > 0xFF { 1 } else { 0 };
+        ProgramCounter::Next
+    }
+
+    fn opcode_subtract_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+         self.registers[0x0f] = if self.registers[x] > self.registers[y] { 1 } else { 0 };
+         self.registers[x] -= self.registers[y];
+
         ProgramCounter::Next
     }
 }
