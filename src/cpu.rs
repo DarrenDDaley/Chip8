@@ -20,7 +20,7 @@ impl ProgramCounter {
 
 pub struct CPU {
     registers : [u8; 16],
-    register_i : u16,
+    register_i : usize,
     program_counter: usize,
     stack: [usize; 16],
     stack_pointer: usize,
@@ -80,6 +80,13 @@ impl CPU {
             (0x08, _, _, 0x03) => self.opcode_xor_vxvy(x, y),
             (0x08, _, _, 0x04) => self.opcode_addcarry_vxvy(x, y),
             (0x08, _, _, 0x05) => self.opcode_subtract_vxvy(x, y),
+            (0x08, _, _, 0x06) => self.opcode_dividecarry_vxvy(x, y),
+            (0x08, _, _, 0x07) => self.opcode_subtractnotborrow_vxvy(x, y),
+            (0x08, _, _, 0x0e) => self.opcode_mutiplecarry_vxvy(x, y),
+            (0x09, _, _, 0x00) => self.opcode_9xy0(x, y),
+            (0x0a, _, _, _,) => self.opcode_annn(nnn),
+
+
 
             _ => ProgramCounter::Next
         };
@@ -175,6 +182,35 @@ impl CPU {
     fn opcode_subtract_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
          self.registers[0x0f] = if self.registers[x] > self.registers[y] { 1 } else { 0 };
          self.registers[x] -= self.registers[y];
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_dividecarry_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+         self.registers[0x0f] =  self.registers[x] & 1;
+         self.registers[x] /= 2;
+
+        ProgramCounter::Next;
+    }
+
+    fn opcode_subtractnotborrow_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+        self.registers[0x0f] = if self.registers[y] > self.registers[x] { 1 } else { 0 };
+        self.registers[x] -= self.registers[y];
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_mutiplecarry_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+        self.registers[0x0f] = (self.registers[x] & 0b10000000) >> 7;
+        self.registers[x] *= 2;
+    }
+
+    fn opcode_9xy0(&self, x: usize, y: usize) -> ProgramCounter {
+        ProgramCounter::skip_if(self.registers[x] != self.registers[y])
+    }
+
+    fn opcode_annn(&mut self, nnn: usize) -> ProgramCounter {
+        self.register_i = nnn;
 
         ProgramCounter::Next
     }
