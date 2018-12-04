@@ -4,6 +4,7 @@ extern crate rand;
 
 mod display;
 mod memory;
+mod input;
 mod cpu;
 
 use std::process;
@@ -22,4 +23,5 @@ pub fn main() {
 
     let sdl_context = sdl2::init().unwrap();
     let mut display = display::Display::new(&sdl_context);
+    let mut input = input::Input::new(&sdl_context);
 }
