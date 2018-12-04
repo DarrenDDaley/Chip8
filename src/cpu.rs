@@ -1,5 +1,9 @@
+use rand;
+use rand::Rng;
+
 use CHIP8_WIDTH;
 use CHIP8_HEIGHT;
+
 
 const OPCODE_SIZE: usize = 2;
 
@@ -84,9 +88,10 @@ impl CPU {
             (0x08, _, _, 0x07) => self.opcode_subtractnotborrow_vxvy(x, y),
             (0x08, _, _, 0x0e) => self.opcode_mutiplecarry_vxvy(x, y),
             (0x09, _, _, 0x00) => self.opcode_9xy0(x, y),
-            (0x0a, _, _, _,) => self.opcode_annn(nnn),
-
-
+            (0x0a, _, _, _) => self.opcode_annn(nnn),
+            (0x0b, _, _, _) => self.opcode_bnn(nnn),
+            (0x0c, _, _, _) => self.opcode_cxkk(x, kk),
+            (0x0d, _, _, _) => self.opcode_dxyn(x, y, n),
 
             _ => ProgramCounter::Next
         };
@@ -190,7 +195,7 @@ impl CPU {
          self.registers[0x0f] =  self.registers[x] & 1;
          self.registers[x] /= 2;
 
-        ProgramCounter::Next;
+        ProgramCounter::Next
     }
 
     fn opcode_subtractnotborrow_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
@@ -203,6 +208,8 @@ impl CPU {
     fn opcode_mutiplecarry_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
         self.registers[0x0f] = (self.registers[x] & 0b10000000) >> 7;
         self.registers[x] *= 2;
+
+        ProgramCounter::Next
     }
 
     fn opcode_9xy0(&self, x: usize, y: usize) -> ProgramCounter {
@@ -211,6 +218,32 @@ impl CPU {
 
     fn opcode_annn(&mut self, nnn: usize) -> ProgramCounter {
         self.register_i = nnn;
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_bnn(&self, nnn: usize) ->  ProgramCounter {
+        ProgramCounter::Jump((self.registers[0] as usize) + nnn)
+    }
+
+    fn opcode_cxkk(&mut self, x: usize, kk: u8) -> ProgramCounter {
+        let mut range = rand::thread_rng();
+        self.registers[x] = range.gen::<u8>() & kk;
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_dxyn(&mut self, x: usize, y: usize, n: usize) -> ProgramCounter {
+        self.registers[0x0f] = 0;
+        for byte in 0..n  {
+            let y = (self.registers[y] as usize + byte) % CHIP8_HEIGHT;
+                for bit in 0..8 {
+                let x = (self.registers[x] as usize + bit) % CHIP8_WIDTH;
+                let color = (self.memory[self.register_i + byte] >> (7 - bit)) & 1;
+                self.registers[0x0f] |= color & self.video_ram[y][x];
+                self.video_ram[y][x] ^= color;
+            }
+        }
 
         ProgramCounter::Next
     }
