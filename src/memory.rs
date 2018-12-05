@@ -4,12 +4,14 @@ use std::error::Error;
 use std::io::prelude::*;
 
 pub struct RAM {
-     memory : [u8; 4096],
+    pub memory : [u8; 4096],
 }
 
 impl RAM {
     pub fn new() -> RAM {
-        let mut ram = RAM { memory: [0; 4096] };
+        let mut ram = RAM {
+            memory: [0; 4096],
+        };
 
         for i in 0x0..0x50  {
             ram.memory[i] = FONTSET[i];

@@ -1,7 +1,16 @@
+extern crate sdl2;
+extern crate rand;
+
+
 mod display;
 mod memory;
+mod input;
+mod cpu;
 
 use std::process;
+
+const CHIP8_WIDTH: usize = 64;
+const CHIP8_HEIGHT: usize = 32;
 
 pub fn main() {
 
@@ -12,9 +21,7 @@ pub fn main() {
         process::exit(1);
     });
 
-    let display = display::Display::new("Chip 8 Emulator".to_string(),
-                                                800,
-                                                600,
-                                                1);
-    display.initialize();
+    let sdl_context = sdl2::init().unwrap();
+    let mut display = display::Display::new(&sdl_context);
+    let mut input = input::Input::new(&sdl_context);
 }
