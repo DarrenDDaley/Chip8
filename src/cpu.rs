@@ -7,6 +7,12 @@ use CHIP8_HEIGHT;
 
 const OPCODE_SIZE: usize = 2;
 
+pub struct Output<'a> {
+    pub video_ram: &'a [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT],
+    pub video_ram_changed: bool,
+    pub beep: bool,
+}
+
 enum ProgramCounter {
     Next,
     Skip,
@@ -31,7 +37,13 @@ pub struct CPU {
     delay_timer: u8,
     sound_timer: u8,
     memory : [u8; 4096],
-    pub video_ram: [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT]
+    video_ram_changed : bool,
+    video_ram: [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT],
+    keypad: [bool; 16],
+    keypad_register: usize,
+    keypad_waiting: bool,
+    beep: bool,
+
 }
 
 impl CPU {
@@ -45,9 +57,46 @@ impl CPU {
             delay_timer: 0,
             sound_timer: 0,
             memory,
-            video_ram: [[0; CHIP8_WIDTH]; CHIP8_HEIGHT]
+            video_ram_changed: false,
+            video_ram: [[0; CHIP8_WIDTH]; CHIP8_HEIGHT],
+            keypad: [false; 16],
+            keypad_register: 0,
+            keypad_waiting: bool,
+            beep: false,
         };
         cpu
+    }
+
+    pub fn cpu_cycle(&mut self, keypad: [bool; 16]) -> Output {
+        self.keypad = keypad;
+        self.video_ram_changed = false;
+
+        if self.keypad_waiting {
+            for i in 0..keypad.len() {
+                if keypad[i] {
+                    self.keypad_waiting = false;
+                    self.registers[self.keypad_register] = i as u8;
+                    break;
+                }
+            }
+        }
+        else {
+            if self.delay_timer > 0 {
+                self.delay_timer -= 1;
+            }
+
+           if self.sound_timer > 0 {
+               self.sound_timer -= 1;
+           }
+            self.opcode_execute();
+        }
+
+        Output {
+            video_ram: &self.video_ram,
+            video_ram_changed: self.video_ram_changed,
+            beep: self.sound_timer > 0,
+        }
+
     }
 
     pub fn opcode_execute(&mut self) {
@@ -92,6 +141,17 @@ impl CPU {
             (0x0b, _, _, _) => self.opcode_bnn(nnn),
             (0x0c, _, _, _) => self.opcode_cxkk(x, kk),
             (0x0d, _, _, _) => self.opcode_dxyn(x, y, n),
+            (0x0e, _, 0x09, 0x0e) => self.opcode_ex9e(x),
+            (0x0e, _, 0x0a, 0x01) => self.opcode_exa1(x),
+            (0x0f, _, 0x00, 0x07) => self.opcode_fx07(x),
+            (0x0f, _, 0x00, 0x0a) => self.opcode_fx0a(x),
+            (0x0f, _, 0x01, 0x05) => self.opcode_fx15(x),
+            (0x0f, _, 0x01, 0x08) => self.opcode_fx18(x),
+            (0x0f, _, 0x01, 0x0e) => self.opcode_fx1e(x),
+            (0x0f, _, 0x02, 0x09) => self.opcode_Fx29(x),
+            (0x0f, _, 0x03, 0x03) => self.opcode_fx33(x),
+            (0x0f, _, 0x05, 0x05) => self.opcode_fx55(x),
+            (0x0f, _, 0x06, 0x05) => self.opcode_fx65(x),
 
             _ => ProgramCounter::Next
         };
@@ -245,6 +305,74 @@ impl CPU {
             }
         }
 
+        ProgramCounter::Next
+    }
+
+    fn opcode_ex9e(self, x: usize) -> ProgramCounter {
+        ProgramCounter::skip_if(self.keypad[self.registers[x] as usize])
+    }
+
+    fn opcode_exa1(self, x: usize) -> ProgramCounter {
+        ProgramCounter::skip_if(!self.keypad[self.registers[x] as usize])
+    }
+
+    fn opcode_fx07(&mut self, x: usize) -> ProgramCounter {
+        self.registers[x] = self.delay_timer;
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_fx0a(&mut self, x: usize) -> ProgramCounter {
+        self.keypad_waiting = true;
+        self.keypad_register = x;
+
+        ProgramCounter::Next;
+    }
+
+    fn opcode_fx15(&mut self, x: usize) -> ProgramCounter {
+        self.delay_timer = self.registers[x];
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_fx18(&mut self, x: usize) -> ProgramCounter {
+        self.sound_timer = self.registers[x];
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_fx1e(&mut self, x: usize) -> ProgramCounter {
+        self.register_i += self.registers[x] as uszie;
+        self.registers[0x0f] = if self.register_i > 0xF00 { 1 } else { 0 };
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_Fx29(&mut self, x: usize) -> ProgramCounter {
+        self.register_i = (self.registers[x] as usize) * 5;
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_fx33(&mut self, x: usize) -> ProgramCounter {
+        self.memory[self.register_i] = self.registers[x] / 100;
+        self.memory[self.register_i + 1] = (self.registers[x] % 100) / 10;
+        self.memory[self.register_i + 2] = self.registers[x] % 10;
+
+        ProgramCounter::Next
+    }
+
+    fn opcode_fx55(&mut self, x: usize) -> ProgramCounter {
+        for i in 0..x + 1 {
+            self.memory[self.register_i + i] = self.registers[i];
+        }
+        ProgramCounter::Next
+    }
+
+    fn opcode_fx65(&mut self, x: usize) -> ProgramCounter {
+        for i in 0..x + 1  {
+            self.registers[i] = self.memory[self.register_i + i];
+        }
         ProgramCounter::Next
     }
 }
