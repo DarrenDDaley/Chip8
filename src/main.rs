@@ -8,6 +8,8 @@ mod input;
 mod cpu;
 
 use std::process;
+use std::thread;
+use std::time::Duration;
 
 const CHIP8_WIDTH: usize = 64;
 const CHIP8_HEIGHT: usize = 32;
@@ -21,6 +23,7 @@ pub fn main() {
         process::exit(1);
     });
 
+    let sleep_duration = Duration::from_millis(2);
     let sdl_context = sdl2::init().unwrap();
     let mut display = display::Display::new(&sdl_context);
     let mut input = input::Input::new(&sdl_context);
@@ -33,5 +36,7 @@ pub fn main() {
         if output.video_memory_changed {
             display.draw(output.video_memory);
         }
+
+        thread::sleep(sleep_duration);
     }
 }
