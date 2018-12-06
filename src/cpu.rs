@@ -48,7 +48,7 @@ pub struct CPU {
 
 impl CPU {
     pub fn new(memory: [u8; 4096]) -> Self {
-        let mut cpu  = CPU {
+        let cpu  = CPU {
             registers: [0; 16],
             register_i: 0x200,
             program_counter: 0x200,
@@ -179,10 +179,8 @@ impl CPU {
     }
 
     fn opcode_00ee(&mut self) -> ProgramCounter {
-        let pointer = self.stack_pointer;
-
         self.stack_pointer -= 1;
-        ProgramCounter::Jump(self.stack[pointer])
+        ProgramCounter::Jump(self.stack[self.stack_pointer])
     }
 
     fn opcode_1nnn(&self, nnn: usize) -> ProgramCounter {
@@ -190,8 +188,8 @@ impl CPU {
     }
 
     fn opcode_2nnn(&mut self, nnn: usize) -> ProgramCounter {
+        self.stack[self.stack_pointer] = self.program_counter + OPCODE_SIZE;
         self.stack_pointer += 1;
-        self.stack[self.stack_pointer] = self.program_counter;
 
         ProgramCounter::Jump(nnn)
     }
@@ -215,7 +213,10 @@ impl CPU {
     }
 
     fn opcode_7xkk(&mut self, x: usize, kk: u8) -> ProgramCounter {
-        self.registers[x] = self.registers[x] + kk;
+        let vx = self.registers[x] as u16;
+        let val = kk as u16;
+        let result = vx + val;
+        self.registers[x] = result as u8;
 
         ProgramCounter::Next
     }
@@ -255,7 +256,7 @@ impl CPU {
 
     fn opcode_8xy5(&mut self, x: usize, y: usize) -> ProgramCounter {
          self.registers[0x0f] = if self.registers[x] > self.registers[y] { 1 } else { 0 };
-         self.registers[x] -= self.registers[y];
+         self.registers[x] = self.registers[x].wrapping_sub(self.registers[y]);
 
         ProgramCounter::Next
     }
@@ -269,7 +270,7 @@ impl CPU {
 
     fn opcode_8xy7(&mut self, x: usize, y: usize) -> ProgramCounter {
         self.registers[0x0f] = if self.registers[y] > self.registers[x] { 1 } else { 0 };
-        self.registers[x] -= self.registers[y];
+        self.registers[x] = self.registers[y].wrapping_sub(self.registers[x]);
 
         ProgramCounter::Next
     }
@@ -386,7 +387,3 @@ impl CPU {
         ProgramCounter::Next
     }
 }
-
-#[cfg(test)]
-#[path = "./cpu_tests.rs"]
-mod cpu_tests;
