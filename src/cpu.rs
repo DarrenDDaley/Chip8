@@ -61,7 +61,7 @@ impl CPU {
             video_ram: [[0; CHIP8_WIDTH]; CHIP8_HEIGHT],
             keypad: [false; 16],
             keypad_register: 0,
-            keypad_waiting: bool,
+            keypad_waiting: false,
             beep: false,
         };
         cpu
@@ -118,24 +118,24 @@ impl CPU {
 
 
         let pc_change = match nibbles {
-            (0x00, 0x00, 0x0e, 0x00) => self.opcode_clear_screen(),
-            (0x00, 0x00, 0x0e, 0x0e) => self.opcode_return_subroutine(),
-            (0x01, _, _, _) => self.opcode_jump_nnn(nnn),
-            (0x02, _, _, _) => self.opcode_call_subroutine_nnn(nnn),
-            (0x03, _, _, _) => self.opcode_skip_equal_vxkk(x, kk),
-            (0x04, _, _, _) => self.opcode_skip_not_equal_vxkk(x, kk),
-            (0x05, _, _, 0x00) => self.opcode_skip_equal_vxvy(x, y),
-            (0x06, _, _, _) => self.opcode_set_vxkk(x, kk),
-            (0x07, _, _, _) => self.opcode_add_vxkk(x, kk),
-            (0x08, _, _, 0x00) => self.opcode_set_vxvy(x, y),
-            (0x08, _, _, 0x01) => self.opcode_or_vxvy(x, y),
-            (0x08, _, _, 0x02) => self.opcode_and_vxvy(x, y),
-            (0x08, _, _, 0x03) => self.opcode_xor_vxvy(x, y),
-            (0x08, _, _, 0x04) => self.opcode_addcarry_vxvy(x, y),
-            (0x08, _, _, 0x05) => self.opcode_subtract_vxvy(x, y),
-            (0x08, _, _, 0x06) => self.opcode_dividecarry_vxvy(x, y),
-            (0x08, _, _, 0x07) => self.opcode_subtractnotborrow_vxvy(x, y),
-            (0x08, _, _, 0x0e) => self.opcode_mutiplecarry_vxvy(x, y),
+            (0x00, 0x00, 0x0e, 0x00) => self.opcode_00e0(),
+            (0x00, 0x00, 0x0e, 0x0e) => self.opcode_00ee(),
+            (0x01, _, _, _) => self.opcode_1nnn(nnn),
+            (0x02, _, _, _) => self.opcode_2nnn(nnn),
+            (0x03, _, _, _) => self.opcode_3xkk(x, kk),
+            (0x04, _, _, _) => self.opcode_4xkk(x, kk),
+            (0x05, _, _, 0x00) => self.opcode_5xy0(x, y),
+            (0x06, _, _, _) => self.opcode_6xkk(x, kk),
+            (0x07, _, _, _) => self.opcode_7xkk(x, kk),
+            (0x08, _, _, 0x00) => self.opcode_8xy0(x, y),
+            (0x08, _, _, 0x01) => self.opcode_8xy1(x, y),
+            (0x08, _, _, 0x02) => self.opcode_8xy2(x, y),
+            (0x08, _, _, 0x03) => self.opcode_8xy3(x, y),
+            (0x08, _, _, 0x04) => self.opcode_8xy4(x, y),
+            (0x08, _, _, 0x05) => self.opcode_8xy5(x, y),
+            (0x08, _, _, 0x06) => self.opcode_8xy6(x, y),
+            (0x08, _, _, 0x07) => self.opcode_8xy7(x, y),
+            (0x08, _, _, 0x0e) => self.opcode_8xye(x, y),
             (0x09, _, _, 0x00) => self.opcode_9xy0(x, y),
             (0x0a, _, _, _) => self.opcode_annn(nnn),
             (0x0b, _, _, _) => self.opcode_bnn(nnn),
@@ -148,7 +148,7 @@ impl CPU {
             (0x0f, _, 0x01, 0x05) => self.opcode_fx15(x),
             (0x0f, _, 0x01, 0x08) => self.opcode_fx18(x),
             (0x0f, _, 0x01, 0x0e) => self.opcode_fx1e(x),
-            (0x0f, _, 0x02, 0x09) => self.opcode_Fx29(x),
+            (0x0f, _, 0x02, 0x09) => self.opcode_fx29(x),
             (0x0f, _, 0x03, 0x03) => self.opcode_fx33(x),
             (0x0f, _, 0x05, 0x05) => self.opcode_fx55(x),
             (0x0f, _, 0x06, 0x05) => self.opcode_fx65(x),
@@ -168,7 +168,7 @@ impl CPU {
                (self.memory[self.program_counter + 1] as u16);
     }
 
-    fn opcode_clear_screen(&mut self) -> ProgramCounter {
+    fn opcode_00e0(&mut self) -> ProgramCounter {
         for y in 0..CHIP8_HEIGHT {
             for x in 0..CHIP8_WIDTH {
                 self.video_ram[y][x] = 0;
@@ -177,95 +177,103 @@ impl CPU {
         ProgramCounter::Next
     }
 
-    fn opcode_return_subroutine(&mut self) -> ProgramCounter {
+    fn opcode_00ee(&mut self) -> ProgramCounter {
         let pointer = self.stack_pointer;
 
         self.stack_pointer -= 1;
         ProgramCounter::Jump(self.stack[pointer])
     }
 
-    fn opcode_jump_nnn(&self, nnn: usize) -> ProgramCounter {
+    fn opcode_1nnn(&self, nnn: usize) -> ProgramCounter {
         ProgramCounter::Jump(nnn)
     }
 
-    fn opcode_call_subroutine_nnn(&mut self, nnn: usize) -> ProgramCounter {
+    fn opcode_2nnn(&mut self, nnn: usize) -> ProgramCounter {
         self.stack_pointer += 1;
         self.stack[self.stack_pointer] = self.program_counter;
+
         ProgramCounter::Jump(nnn)
     }
 
-    fn opcode_skip_equal_vxkk(&self, x: usize, kk: u8) -> ProgramCounter {
+    fn opcode_3xkk(&self, x: usize, kk: u8) -> ProgramCounter {
         ProgramCounter::skip_if(self.registers[x] == kk)
     }
 
-    fn opcode_skip_not_equal_vxkk(&self, x: usize, kk: u8) -> ProgramCounter {
+    fn opcode_4xkk(&self, x: usize, kk: u8) -> ProgramCounter {
         ProgramCounter::skip_if(self.registers[x] != kk)
     }
 
-    fn opcode_skip_equal_vxvy(&self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_5xy0(&self, x: usize, y: usize) -> ProgramCounter {
         ProgramCounter::skip_if(self.registers[x] == self.registers[y])
     }
 
-    fn opcode_set_vxkk(&mut self, x: usize, kk: u8) -> ProgramCounter {
+    fn opcode_6xkk(&mut self, x: usize, kk: u8) -> ProgramCounter {
         self.registers[x] = kk;
+
         ProgramCounter::Next
     }
 
-    fn opcode_add_vxkk(&mut self, x: usize, kk: u8) -> ProgramCounter {
+    fn opcode_7xkk(&mut self, x: usize, kk: u8) -> ProgramCounter {
         self.registers[x] = self.registers[x] + kk;
+
         ProgramCounter::Next
     }
 
-    fn opcode_set_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_8xy0(&mut self, x: usize, y: usize) -> ProgramCounter {
         self.registers[x] = self.registers[y];
+
         ProgramCounter::Next
     }
 
-    fn opcode_or_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_8xy1(&mut self, x: usize, y: usize) -> ProgramCounter {
         self.registers[x] |= self.registers[y];
+
         ProgramCounter::Next
     }
 
-    fn opcode_and_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_8xy2(&mut self, x: usize, y: usize) -> ProgramCounter {
         self.registers[x] &= self.registers[y];
+
         ProgramCounter::Next
     }
 
-    fn opcode_xor_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_8xy3(&mut self, x: usize, y: usize) -> ProgramCounter {
         self.registers[x] ^= self.registers[y];
+
         ProgramCounter::Next
     }
 
-    fn opcode_addcarry_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_8xy4(&mut self, x: usize, y: usize) -> ProgramCounter {
         let result = (self.registers[x] as u16) + (self.registers[y] as u16);
         self.registers[x] = result as u8;
 
         self.registers[0x0f] = if result > 0xFF { 1 } else { 0 };
+
         ProgramCounter::Next
     }
 
-    fn opcode_subtract_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_8xy5(&mut self, x: usize, y: usize) -> ProgramCounter {
          self.registers[0x0f] = if self.registers[x] > self.registers[y] { 1 } else { 0 };
          self.registers[x] -= self.registers[y];
 
         ProgramCounter::Next
     }
 
-    fn opcode_dividecarry_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_8xy6(&mut self, x: usize, y: usize) -> ProgramCounter {
          self.registers[0x0f] =  self.registers[x] & 1;
          self.registers[x] /= 2;
 
         ProgramCounter::Next
     }
 
-    fn opcode_subtractnotborrow_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_8xy7(&mut self, x: usize, y: usize) -> ProgramCounter {
         self.registers[0x0f] = if self.registers[y] > self.registers[x] { 1 } else { 0 };
         self.registers[x] -= self.registers[y];
 
         ProgramCounter::Next
     }
 
-    fn opcode_mutiplecarry_vxvy(&mut self, x: usize, y: usize) -> ProgramCounter {
+    fn opcode_8xye(&mut self, x: usize, y: usize) -> ProgramCounter {
         self.registers[0x0f] = (self.registers[x] & 0b10000000) >> 7;
         self.registers[x] *= 2;
 
@@ -308,11 +316,11 @@ impl CPU {
         ProgramCounter::Next
     }
 
-    fn opcode_ex9e(self, x: usize) -> ProgramCounter {
+    fn opcode_ex9e(&self, x: usize) -> ProgramCounter {
         ProgramCounter::skip_if(self.keypad[self.registers[x] as usize])
     }
 
-    fn opcode_exa1(self, x: usize) -> ProgramCounter {
+    fn opcode_exa1(&self, x: usize) -> ProgramCounter {
         ProgramCounter::skip_if(!self.keypad[self.registers[x] as usize])
     }
 
@@ -326,7 +334,7 @@ impl CPU {
         self.keypad_waiting = true;
         self.keypad_register = x;
 
-        ProgramCounter::Next;
+        ProgramCounter::Next
     }
 
     fn opcode_fx15(&mut self, x: usize) -> ProgramCounter {
@@ -342,13 +350,13 @@ impl CPU {
     }
 
     fn opcode_fx1e(&mut self, x: usize) -> ProgramCounter {
-        self.register_i += self.registers[x] as uszie;
+        self.register_i += (self.registers[x] as usize);
         self.registers[0x0f] = if self.register_i > 0xF00 { 1 } else { 0 };
 
         ProgramCounter::Next
     }
 
-    fn opcode_Fx29(&mut self, x: usize) -> ProgramCounter {
+    fn opcode_fx29(&mut self, x: usize) -> ProgramCounter {
         self.register_i = (self.registers[x] as usize) * 5;
 
         ProgramCounter::Next
