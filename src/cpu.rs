@@ -8,8 +8,8 @@ use CHIP8_HEIGHT;
 const OPCODE_SIZE: usize = 2;
 
 pub struct Output<'a> {
-    pub video_ram: &'a [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT],
-    pub video_ram_changed: bool,
+    pub video_memory: &'a [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT],
+    pub video_memory_changed: bool,
     pub beep: bool,
 }
 
@@ -37,8 +37,8 @@ pub struct CPU {
     delay_timer: u8,
     sound_timer: u8,
     memory : [u8; 4096],
-    video_ram_changed : bool,
-    video_ram: [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT],
+    video_memory_changed : bool,
+    video_memory: [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT],
     keypad: [bool; 16],
     keypad_register: usize,
     keypad_waiting: bool,
@@ -57,8 +57,8 @@ impl CPU {
             delay_timer: 0,
             sound_timer: 0,
             memory,
-            video_ram_changed: false,
-            video_ram: [[0; CHIP8_WIDTH]; CHIP8_HEIGHT],
+            video_memory_changed: false,
+            video_memory: [[0; CHIP8_WIDTH]; CHIP8_HEIGHT],
             keypad: [false; 16],
             keypad_register: 0,
             keypad_waiting: false,
@@ -69,7 +69,7 @@ impl CPU {
 
     pub fn cpu_cycle(&mut self, keypad: [bool; 16]) -> Output {
         self.keypad = keypad;
-        self.video_ram_changed = false;
+        self.video_memory_changed = false;
 
         if self.keypad_waiting {
             for i in 0..keypad.len() {
@@ -92,8 +92,8 @@ impl CPU {
         }
 
         Output {
-            video_ram: &self.video_ram,
-            video_ram_changed: self.video_ram_changed,
+            video_memory: &self.video_memory,
+            video_memory_changed: self.video_memory_changed,
             beep: self.sound_timer > 0,
         }
 
@@ -171,9 +171,10 @@ impl CPU {
     fn opcode_00e0(&mut self) -> ProgramCounter {
         for y in 0..CHIP8_HEIGHT {
             for x in 0..CHIP8_WIDTH {
-                self.video_ram[y][x] = 0;
+                self.video_memory[y][x] = 0;
             }
         }
+        self.video_memory_changed = true;
         ProgramCounter::Next
     }
 
@@ -308,11 +309,12 @@ impl CPU {
                 for bit in 0..8 {
                 let x = (self.registers[x] as usize + bit) % CHIP8_WIDTH;
                 let color = (self.memory[self.register_i + byte] >> (7 - bit)) & 1;
-                self.registers[0x0f] |= color & self.video_ram[y][x];
-                self.video_ram[y][x] ^= color;
+                self.registers[0x0f] |= color & self.video_memory[y][x];
+                self.video_memory[y][x] ^= color;
             }
         }
 
+        self.video_memory_changed = true;
         ProgramCounter::Next
     }
 
