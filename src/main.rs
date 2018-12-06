@@ -4,6 +4,7 @@ extern crate rand;
 
 mod display;
 mod memory;
+mod sound;
 mod input;
 mod cpu;
 
@@ -27,6 +28,7 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let mut display = display::Display::new(&sdl_context);
     let mut input = input::Input::new(&sdl_context);
+    let mut sound = sound::Sound::new(&sdl_context);
     let mut cpu = cpu::CPU::new(memory.memory);
 
     while let Ok(keypad) = input.poll() {
@@ -37,6 +39,13 @@ pub fn main() {
             display.draw(output.video_memory);
         }
 
+        if output.beep {
+            sound.start_beep();
+        }
+        else {
+            sound.stop_beep();
+        }
+        
         thread::sleep(sleep_duration);
     }
 }
