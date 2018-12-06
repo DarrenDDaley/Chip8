@@ -24,4 +24,14 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let mut display = display::Display::new(&sdl_context);
     let mut input = input::Input::new(&sdl_context);
+    let mut cpu = cpu::CPU::new(memory.memory);
+
+    while let Ok(keypad) = input.poll() {
+
+        let output = cpu.cpu_cycle(keypad);
+
+        if output.video_memory_changed {
+            display.draw(output.video_memory);
+        }
+    }
 }
