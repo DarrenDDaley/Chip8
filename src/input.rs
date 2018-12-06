@@ -30,24 +30,25 @@ impl Input {
         for key in keys {
             match key {
                 Keycode::Num1 => Some(chip8_keys[0x1] = true),
-                Keycode::Num1 => Some(chip8_keys[0x2] = true),
-                Keycode::Num1 => Some(chip8_keys[0x3] = true),
-                Keycode::Num1 => Some(chip8_keys[0xc] = true),
-                Keycode::Num1 => Some(chip8_keys[0x4] = true),
-                Keycode::Num1 => Some(chip8_keys[0x5] = true),
-                Keycode::Num1 => Some(chip8_keys[0x6] = true),
-                Keycode::Num1 => Some(chip8_keys[0xd] = true),
-                Keycode::Num1 => Some(chip8_keys[0x7] = true),
-                Keycode::Num1 => Some(chip8_keys[0x8] = true),
-                Keycode::Num1 => Some(chip8_keys[0x9] = true),
-                Keycode::Num1 => Some(chip8_keys[0xe] = true),
-                Keycode::Num1 => Some(chip8_keys[0xa] = true),
-                Keycode::Num1 => Some(chip8_keys[0x0] = true),
-                Keycode::Num1 => Some(chip8_keys[0xb] = true),
-                Keycode::Num1 => Some(chip8_keys[0xf] = true),
+                Keycode::Num2 => Some(chip8_keys[0x2] = true),
+                Keycode::Num3 => Some(chip8_keys[0x3] = true),
+                Keycode::Num4 => Some(chip8_keys[0xc] = true),
+                Keycode::Q => Some(chip8_keys[0x4] = true),
+                Keycode::W => Some(chip8_keys[0x5] = true),
+                Keycode::E => Some(chip8_keys[0x6] = true),
+                Keycode::R => Some(chip8_keys[0xd] = true),
+                Keycode::A => Some(chip8_keys[0x7] = true),
+                Keycode::S => Some(chip8_keys[0x8] = true),
+                Keycode::D => Some(chip8_keys[0x9] = true),
+                Keycode::F => Some(chip8_keys[0xe] = true),
+                Keycode::Z => Some(chip8_keys[0xa] = true),
+                Keycode::X => Some(chip8_keys[0x0] = true),
+                Keycode::C => Some(chip8_keys[0xb] = true),
+                Keycode::V => Some(chip8_keys[0xf] = true),
                 _ => None,
             };
         }
+
         Ok(chip8_keys)
     }
 }

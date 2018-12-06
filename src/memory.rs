@@ -21,7 +21,7 @@ impl RAM {
 
     pub fn load_rom(&mut self) -> Result<(), String> {
 
-        let args: Vec<String> = env::args().collect();
+       let args: Vec<String> = env::args().collect();
 
         if args.len() <= 1 {
             return  Err("file path to the rom is required".to_string());
