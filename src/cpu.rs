@@ -277,7 +277,7 @@ impl CPU {
 
     fn opcode_8xye(&mut self, x: usize, y: usize) -> ProgramCounter {
         self.registers[0x0f] = (self.registers[x] & 0b10000000) >> 7;
-        self.registers[x] *= 2;
+        self.registers[x] <<= 1;
 
         ProgramCounter::Next
     }
